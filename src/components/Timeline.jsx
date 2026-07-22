@@ -14,14 +14,11 @@ const Timeline = ({ timeline, updateTimeline, openModal }) => {
     { id: 'personal_gratitude', label: '감사일기', zone: 'personal' }
   ]
 
-  const handleCellClick = (timePrefix, hour, col) => {
-    // 해당 시간에 이미 등록된 항목 찾기
-    const existing = timeline.find(t => t.time.startsWith(timePrefix) && t.category === col.id)
-    
+  const handleCellClick = (timePrefix, hour, col, existingEntry = null) => {
     if (col.id === 'school_minwon') {
-      openModal('minwon', existing || { time: `${timePrefix}00`, category: col.id, zone: col.zone })
+      openModal('minwon', existingEntry || { time: `${timePrefix}00`, category: col.id, zone: col.zone })
     } else {
-      openModal('schedule', existing || { hour: hour.toString().padStart(2, '0'), time: `${timePrefix}00`, category: col.id, zone: col.zone })
+      openModal('schedule', existingEntry || { hour: hour.toString().padStart(2, '0'), time: `${timePrefix}00`, category: col.id, zone: col.zone })
     }
   }
 
@@ -48,24 +45,34 @@ const Timeline = ({ timeline, updateTimeline, openModal }) => {
               <tr key={h}>
                 <td className="time-col">{h.toString().padStart(2, '0')}:00</td>
                 {columns.map(col => {
-                  const entry = timeline.find(t => t.time.startsWith(timePrefix) && t.category === col.id)
-                  let displayContent = entry?.content
-                  if (col.id === 'school_minwon' && entry?.minwon_detail) {
-                    displayContent = entry.minwon_detail.title
-                  }
+                  const entries = timeline.filter(t => t.time.startsWith(timePrefix) && t.category === col.id)
 
                   return (
                     <td 
                       key={`${timePrefix}-${col.id}`} 
                       className="timeline-cell"
-                      onClick={() => handleCellClick(timePrefix, h, col)}
+                      onClick={() => handleCellClick(timePrefix, h, col, null)}
                     >
-                      {displayContent && (
-                        <div className="cell-content">
-                          <strong style={{color: '#4caf50', marginRight: '4px'}}>[{entry.time}]</strong> 
-                          {displayContent}
-                        </div>
-                      )}
+                      {entries.map((entry, idx) => {
+                        let displayContent = entry.content
+                        if (col.id === 'school_minwon' && entry.minwon_detail) {
+                          displayContent = entry.minwon_detail.title
+                        }
+                        return (
+                          <div 
+                            key={entry.id || idx}
+                            className="cell-content"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCellClick(timePrefix, h, col, { ...entry, hour: h.toString().padStart(2, '0'), zone: col.zone });
+                            }}
+                            style={{ marginBottom: '4px' }}
+                          >
+                            <strong style={{color: '#4caf50', marginRight: '4px'}}>[{entry.time}]</strong> 
+                            {displayContent}
+                          </div>
+                        )
+                      })}
                     </td>
                   )
                 })}
