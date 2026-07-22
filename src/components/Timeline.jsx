@@ -14,28 +14,30 @@ const Timeline = ({ timeline, updateTimeline, openMinwonModal, customMinutes, up
     { id: 'personal_gratitude', label: '감사일기', zone: 'personal' }
   ]
 
-  const handleCellClick = (time, col) => {
+  const handleCellClick = (timeString, col) => {
     // 이미 내용이 있는지 확인
-    const existing = timeline.find(t => t.time === time && t.category === col.id)
+    const existing = timeline.find(t => t.time === timeString && t.category === col.id)
     
     if (col.id === 'school_minwon') {
-      openMinwonModal(existing || { time, category: col.id })
+      openMinwonModal(existing || { time: timeString, category: col.id })
     } else {
       const text = prompt('일정/업무 내용을 입력하세요 (비우면 삭제):', existing?.content || '')
       if (text !== null) {
         let newTimeline = [...timeline]
         if (text.trim() === '') {
           // 삭제
-          newTimeline = newTimeline.filter(t => !(t.time === time && t.category === col.id))
+          newTimeline = newTimeline.filter(t => !(t.time === timeString && t.category === col.id))
+          updateTimeline(newTimeline)
         } else {
           // 추가 또는 수정
           if (existing) {
             existing.content = text
           } else {
-            newTimeline.push({ time, category: col.id, content: text })
+            newTimeline.push({ time: timeString, category: col.id, content: text })
           }
+          const cat = col.id.replace(`${col.zone}_`, '')
+          updateTimeline(newTimeline, text, col.zone, cat)
         }
-        updateTimeline(newTimeline)
       }
     }
   }

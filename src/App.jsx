@@ -54,9 +54,26 @@ function App() {
   }
 
   // 타임라인 업데이트 핸들러
-  const updateTimeline = (newTimelineItems) => {
+  const updateTimeline = (newTimelineItems, addedContent = null, zone = null, category = null) => {
+    let newSummary = { ...planData.summary }
+
+    if (addedContent && zone && category) {
+      const currentList = newSummary[zone][category] || []
+      const exists = currentList.some(item => (item.title || item) === addedContent)
+      if (!exists && currentList.length < 5) {
+        newSummary = {
+          ...newSummary,
+          [zone]: {
+            ...newSummary[zone],
+            [category]: [...currentList, addedContent]
+          }
+        }
+      }
+    }
+
     const newData = {
       ...planData,
+      summary: newSummary,
       timeline: newTimelineItems
     }
     savePlanData(newData)
@@ -101,7 +118,10 @@ function App() {
       } else {
         existingTimeline.push(newEntry)
       }
-      updateTimeline(existingTimeline)
+      
+      const zone = modalData.category.startsWith('school') ? 'school' : 'personal'
+      const cat = modalData.category.replace(`${zone}_`, '')
+      updateTimeline(existingTimeline, minwonDetail.title, zone, cat)
     }
     closeMinwonModal()
   }
