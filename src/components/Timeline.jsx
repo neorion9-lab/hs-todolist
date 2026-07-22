@@ -1,15 +1,8 @@
-import React, { useState } from 'react'
+import React from 'react'
 
-const Timeline = ({ timeline, updateTimeline, openMinwonModal }) => {
-  const [intervalMin, setIntervalMin] = useState(60)
-
-  // 06:00 ~ 23:00 생성
-  const times = []
-  for (let h = 6; h <= 23; h++) {
-    for (let m = 0; m < 60; m += intervalMin) {
-      times.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`)
-    }
-  }
+const Timeline = ({ timeline, updateTimeline, openMinwonModal, customMinutes, updateCustomMinutes }) => {
+  // 06:00 ~ 23:00 (18시간)
+  const hours = Array.from({ length: 18 }, (_, i) => i + 6)
 
   const columns = [
     { id: 'school_main', label: '주요일정', zone: 'school' },
@@ -54,41 +47,7 @@ const Timeline = ({ timeline, updateTimeline, openMinwonModal }) => {
         <table className="timeline-table">
           <thead>
             <tr>
-              <th className="time-col" style={{position: 'relative', paddingRight: '20px'}}>
-                시간
-                <select 
-                  value={intervalMin} 
-                  onChange={(e) => setIntervalMin(Number(e.target.value))}
-                  style={{
-                    position: 'absolute',
-                    top: '2px',
-                    right: '2px',
-                    width: '20px',
-                    height: '20px',
-                    opacity: 0,
-                    cursor: 'pointer',
-                    zIndex: 2
-                  }}
-                  title="시간 간격 설정"
-                >
-                  <option value={10}>10분</option>
-                  <option value={20}>20분</option>
-                  <option value={30}>30분</option>
-                  <option value={40}>40분</option>
-                  <option value={50}>50분</option>
-                  <option value={60}>60분</option>
-                </select>
-                <div style={{
-                  position: 'absolute',
-                  top: '6px',
-                  right: '4px',
-                  fontSize: '0.6rem',
-                  pointerEvents: 'none',
-                  color: '#666'
-                }}>
-                  ▼
-                </div>
-              </th>
+              <th className="time-col">시간</th>
               {columns.map(col => (
                 <th key={col.id} className={col.zone === 'school' ? 'school-col' : 'personal-col'}>
                   {col.label}
@@ -97,11 +56,59 @@ const Timeline = ({ timeline, updateTimeline, openMinwonModal }) => {
             </tr>
           </thead>
           <tbody>
-            {times.map(time => (
-              <tr key={time}>
-                <td className="time-col">{time}</td>
+            {hours.map(h => {
+              const minute = customMinutes[h] || '00'
+              const timeString = `${h.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
+
+              return (
+              <tr key={h}>
+                <td className="time-col" style={{position: 'relative'}}>
+                  {timeString}
+                  <select 
+                    value={minute} 
+                    onChange={(e) => {
+                      const newMinute = e.target.value
+                      updateCustomMinutes({ ...customMinutes, [h]: newMinute })
+                      
+                      const newTimeString = `${h.toString().padStart(2, '0')}:${newMinute.toString().padStart(2, '0')}`
+                      const updatedTimeline = timeline.map(t => 
+                        t.time === timeString ? { ...t, time: newTimeString } : t
+                      )
+                      updateTimeline(updatedTimeline)
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: '0px',
+                      right: '0px',
+                      width: '15px',
+                      height: '15px',
+                      opacity: 0,
+                      cursor: 'pointer',
+                      zIndex: 2
+                    }}
+                    title="분 설정"
+                  >
+                    <option value="00">00분</option>
+                    <option value="10">10분</option>
+                    <option value="20">20분</option>
+                    <option value="30">30분</option>
+                    <option value="40">40분</option>
+                    <option value="50">50분</option>
+                    <option value="60">60분</option>
+                  </select>
+                  <div style={{
+                    position: 'absolute',
+                    top: '2px',
+                    right: '2px',
+                    fontSize: '0.6rem',
+                    pointerEvents: 'none',
+                    color: '#999'
+                  }}>
+                    ▼
+                  </div>
+                </td>
                 {columns.map(col => {
-                  const entry = timeline.find(t => t.time === time && t.category === col.id)
+                  const entry = timeline.find(t => t.time === timeString && t.category === col.id)
                   let displayContent = entry?.content
                   if (col.id === 'school_minwon' && entry?.minwon_detail) {
                     displayContent = entry.minwon_detail.title
@@ -109,9 +116,9 @@ const Timeline = ({ timeline, updateTimeline, openMinwonModal }) => {
 
                   return (
                     <td 
-                      key={`${time}-${col.id}`} 
+                      key={`${timeString}-${col.id}`} 
                       className="timeline-cell"
-                      onClick={() => handleCellClick(time, col)}
+                      onClick={() => handleCellClick(timeString, col)}
                     >
                       {displayContent && (
                         <div className="cell-content">
@@ -122,7 +129,8 @@ const Timeline = ({ timeline, updateTimeline, openMinwonModal }) => {
                   )
                 })}
               </tr>
-            ))}
+              )
+            })}
           </tbody>
         </table>
       </div>

@@ -10,7 +10,8 @@ const defaultData = {
     school: { main: [], gongmun: [], minwon: [] },
     personal: { main: [], health_diet: [], health_exercise: [], gratitude: [] }
   },
-  timeline: []
+  timeline: [],
+  customMinutes: {}
 }
 
 function App() {
@@ -57,6 +58,15 @@ function App() {
     const newData = {
       ...planData,
       timeline: newTimelineItems
+    }
+    savePlanData(newData)
+  }
+
+  // 타임라인 분 설정 업데이트 핸들러
+  const updateCustomMinutes = (newCustomMinutes) => {
+    const newData = {
+      ...planData,
+      customMinutes: newCustomMinutes
     }
     savePlanData(newData)
   }
@@ -110,6 +120,8 @@ function App() {
         timeline={planData.timeline} 
         updateTimeline={updateTimeline}
         openMinwonModal={openMinwonModal}
+        customMinutes={planData.customMinutes || {}}
+        updateCustomMinutes={updateCustomMinutes}
       />
 
       {isModalOpen && (
