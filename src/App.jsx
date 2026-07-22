@@ -3,6 +3,7 @@ import Header from './components/Header'
 import SummaryGrid from './components/SummaryGrid'
 import Timeline from './components/Timeline'
 import MinwonModal from './components/MinwonModal'
+import ScheduleModal from './components/ScheduleModal'
 
 // 기본 데이터 구조
 const defaultData = {
@@ -10,14 +11,13 @@ const defaultData = {
     school: { main: [], gongmun: [], minwon: [] },
     personal: { main: [], health_diet: [], health_exercise: [], gratitude: [] }
   },
-  timeline: [],
-  customMinutes: {}
+  timeline: []
 }
 
 function App() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [planData, setPlanData] = useState(defaultData)
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [modalType, setModalType] = useState(null) // 'minwon' | 'schedule' | null
   const [modalData, setModalData] = useState(null) // 선택된 타임라인이나 민원 데이터
 
   const dateString = currentDate.toISOString().split('T')[0]
@@ -79,23 +79,46 @@ function App() {
     savePlanData(newData)
   }
 
-  // 타임라인 분 설정 업데이트 핸들러
-  const updateCustomMinutes = (newCustomMinutes) => {
-    const newData = {
-      ...planData,
-      customMinutes: newCustomMinutes
-    }
-    savePlanData(newData)
+  // 모달 제어
+  const openModal = (type, initialData = null) => {
+    setModalType(type)
+    setModalData(initialData)
+  }
+  const closeModal = () => {
+    setModalType(null)
+    setModalData(null)
   }
 
-  // 모달 제어
-  const openMinwonModal = (initialData = null) => {
-    setModalData(initialData)
-    setIsModalOpen(true)
-  }
-  const closeMinwonModal = () => {
-    setIsModalOpen(false)
-    setModalData(null)
+  // 일반 일정 저장 핸들러
+  const handleScheduleSave = (data) => {
+    const existingTimeline = [...planData.timeline]
+    const prefix = `${data.hour}:`
+    const index = existingTimeline.findIndex(
+      (t) => t.time.startsWith(prefix) && t.category === data.category
+    )
+
+    if (data.delete) {
+      if (index >= 0) {
+        existingTimeline.splice(index, 1)
+        updateTimeline(existingTimeline)
+      }
+    } else {
+      const newEntry = {
+        time: data.time,
+        category: data.category,
+        content: data.content
+      }
+      if (index >= 0) {
+        existingTimeline[index] = newEntry
+      } else {
+        existingTimeline.push(newEntry)
+      }
+      
+      const zone = data.category.startsWith('school') ? 'school' : 'personal'
+      const cat = data.category.replace(`${zone}_`, '')
+      updateTimeline(existingTimeline, data.content, zone, cat)
+    }
+    closeModal()
   }
 
   // 민원 저장 핸들러
@@ -123,7 +146,7 @@ function App() {
       const cat = modalData.category.replace(`${zone}_`, '')
       updateTimeline(existingTimeline, minwonDetail.title, zone, cat)
     }
-    closeMinwonModal()
+    closeModal()
   }
 
   return (
@@ -133,21 +156,27 @@ function App() {
       <SummaryGrid 
         summary={planData.summary} 
         updateSummary={updateSummary} 
-        openMinwonModal={openMinwonModal}
+        openMinwonModal={(data) => openModal('minwon', data)}
       />
       
       <Timeline 
         timeline={planData.timeline} 
         updateTimeline={updateTimeline}
-        openMinwonModal={openMinwonModal}
-        customMinutes={planData.customMinutes || {}}
-        updateCustomMinutes={updateCustomMinutes}
+        openModal={openModal}
       />
 
-      {isModalOpen && (
+      {modalType === 'minwon' && (
         <MinwonModal 
-          onClose={closeMinwonModal} 
+          onClose={closeModal} 
           onSave={handleMinwonSave}
+          initialData={modalData}
+        />
+      )}
+      
+      {modalType === 'schedule' && (
+        <ScheduleModal 
+          onClose={closeModal} 
+          onSave={handleScheduleSave}
           initialData={modalData}
         />
       )}
