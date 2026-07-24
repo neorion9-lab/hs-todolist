@@ -54,20 +54,19 @@ function App() {
   }
 
   // 타임라인 업데이트 핸들러
-  const updateTimeline = (newTimelineItems, addedContent = null, zone = null, category = null) => {
-    let newSummary = { ...planData.summary }
+  const updateTimeline = (newTimelineItems, addedContent = null, zone = null, category = null, removedContent = null) => {
+    let newSummary = JSON.parse(JSON.stringify(planData.summary))
+
+    if (removedContent && zone && category) {
+      const currentList = newSummary[zone][category] || []
+      newSummary[zone][category] = currentList.filter(item => (item.title || item) !== removedContent)
+    }
 
     if (addedContent && zone && category) {
       const currentList = newSummary[zone][category] || []
       const exists = currentList.some(item => (item.title || item) === addedContent)
       if (!exists && currentList.length < 5) {
-        newSummary = {
-          ...newSummary,
-          [zone]: {
-            ...newSummary[zone],
-            [category]: [...currentList, addedContent]
-          }
-        }
+        newSummary[zone][category] = [...currentList, addedContent]
       }
     }
 
@@ -103,10 +102,22 @@ function App() {
 
     if (data.delete) {
       if (index >= 0) {
+        const deletedEntry = existingTimeline[index];
+        const zone = deletedEntry.category.startsWith('school') ? 'school' : 'personal';
+        const cat = deletedEntry.category.replace(`${zone}_`, '');
+
         existingTimeline.splice(index, 1)
-        updateTimeline(existingTimeline)
+        updateTimeline(existingTimeline, null, zone, cat, deletedEntry.content)
       }
     } else {
+      let removedContent = null;
+      const zone = data.category.startsWith('school') ? 'school' : 'personal';
+      const cat = data.category.replace(`${zone}_`, '');
+
+      if (index >= 0) {
+        removedContent = existingTimeline[index].content;
+      }
+
       const newEntry = {
         id: data.id || Date.now().toString() + Math.random().toString(36).substr(2, 9),
         time: data.time,
@@ -119,9 +130,7 @@ function App() {
         existingTimeline.push(newEntry)
       }
       
-      const zone = data.category.startsWith('school') ? 'school' : 'personal'
-      const cat = data.category.replace(`${zone}_`, '')
-      updateTimeline(existingTimeline, data.content, zone, cat)
+      updateTimeline(existingTimeline, data.content, zone, cat, removedContent)
     }
     closeModal()
   }
@@ -139,22 +148,36 @@ function App() {
         )
       }
       
-      const newEntry = {
-        id: modalData.id || Date.now().toString() + Math.random().toString(36).substr(2, 9),
-        time: modalData.time,
-        category: modalData.category,
-        minwon_detail: minwonDetail
-      }
+      let removedContent = null;
+      const zone = modalData.category.startsWith('school') ? 'school' : 'personal';
+      const cat = modalData.category.replace(`${zone}_`, '');
 
-      if (index >= 0) {
-        existingTimeline[index] = newEntry
+      if (minwonDetail.delete) {
+        if (index >= 0) {
+          removedContent = existingTimeline[index].minwon_detail.title;
+          existingTimeline.splice(index, 1);
+          updateTimeline(existingTimeline, null, zone, cat, removedContent);
+        }
       } else {
-        existingTimeline.push(newEntry)
+        if (index >= 0) {
+          removedContent = existingTimeline[index].minwon_detail.title;
+        }
+
+        const newEntry = {
+          id: modalData.id || Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          time: modalData.time,
+          category: modalData.category,
+          minwon_detail: minwonDetail
+        }
+
+        if (index >= 0) {
+          existingTimeline[index] = newEntry
+        } else {
+          existingTimeline.push(newEntry)
+        }
+        
+        updateTimeline(existingTimeline, minwonDetail.title, zone, cat, removedContent)
       }
-      
-      const zone = modalData.category.startsWith('school') ? 'school' : 'personal'
-      const cat = modalData.category.replace(`${zone}_`, '')
-      updateTimeline(existingTimeline, minwonDetail.title, zone, cat)
     }
     closeModal()
   }
