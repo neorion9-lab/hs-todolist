@@ -228,6 +228,10 @@ function App() {
           initialData={modalData}
         />
       )}
+
+      <footer className="footer">
+        저작권: &copy; 2026 Hyunsil_ORION. All rights reserved.
+      </footer>
     </div>
   )
 }
