@@ -92,10 +92,14 @@ function App() {
   // 일반 일정 저장 핸들러
   const handleScheduleSave = (data) => {
     const existingTimeline = [...planData.timeline]
-    const prefix = `${data.hour}:`
-    const index = existingTimeline.findIndex(
-      (t) => t.time.startsWith(prefix) && t.category === data.category
-    )
+    
+    let index = -1
+    if (modalData && (modalData.id || modalData.content)) {
+      index = existingTimeline.findIndex(t => 
+        (modalData.id && t.id === modalData.id) || 
+        (!modalData.id && t.category === modalData.category && t.time === modalData.time && t.content === modalData.content)
+      )
+    }
 
     if (data.delete) {
       if (index >= 0) {
@@ -104,6 +108,7 @@ function App() {
       }
     } else {
       const newEntry = {
+        id: data.id || Date.now().toString() + Math.random().toString(36).substr(2, 9),
         time: data.time,
         category: data.category,
         content: data.content
@@ -126,11 +131,16 @@ function App() {
     // 타임라인 업데이트 로직 (모달 데이터에 time, category가 있다고 가정)
     if (modalData && modalData.time) {
       const existingTimeline = [...planData.timeline]
-      const index = existingTimeline.findIndex(
-        (t) => t.time === modalData.time && t.category === modalData.category
-      )
+      let index = -1
+      if (modalData.id || modalData.minwon_detail) {
+        index = existingTimeline.findIndex(t => 
+          (modalData.id && t.id === modalData.id) || 
+          (!modalData.id && t.category === modalData.category && t.time === modalData.time && t.minwon_detail?.title === modalData.minwon_detail?.title)
+        )
+      }
       
       const newEntry = {
+        id: modalData.id || Date.now().toString() + Math.random().toString(36).substr(2, 9),
         time: modalData.time,
         category: modalData.category,
         minwon_detail: minwonDetail

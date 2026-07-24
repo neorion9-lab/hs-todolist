@@ -67,12 +67,22 @@ const Timeline = ({ timeline, updateTimeline, openModal }) => {
                               handleCellClick(timePrefix, h, col, { ...entry, hour: h.toString().padStart(2, '0'), zone: col.zone });
                             }}
                             style={{ marginBottom: '4px' }}
+                            title="클릭하여 수정 또는 삭제"
                           >
                             <strong style={{color: '#4caf50', marginRight: '4px'}}>[{entry.time}]</strong> 
                             {displayContent}
                           </div>
                         )
                       })}
+                      <div 
+                        className="add-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCellClick(timePrefix, h, col, null);
+                        }}
+                      >
+                        + 추가
+                      </div>
                     </td>
                   )
                 })}

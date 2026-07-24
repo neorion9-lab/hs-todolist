@@ -202,6 +202,27 @@ body {
   word-break: break-all;
 }
 
+.add-btn {
+  font-size: 0.75rem;
+  color: #999;
+  text-align: center;
+  padding: 4px 0;
+  margin-top: 4px;
+  border: 1px dashed #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.2s;
+}
+.timeline-cell:hover .add-btn {
+  opacity: 1;
+}
+.add-btn:hover {
+  background-color: #f0f0f0;
+  color: var(--sage-green);
+  border-color: var(--sage-green);
+}
+
 /* Modal */
 .modal-overlay {
   position: fixed;
