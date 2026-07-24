@@ -1,6 +1,6 @@
 import React from 'react'
 
-const Header = ({ currentDate, setCurrentDate }) => {
+const Header = ({ currentDate, setCurrentDate, onDownloadCSV }) => {
   const handlePrevDay = () => {
     const prev = new Date(currentDate)
     prev.setDate(prev.getDate() - 1)
@@ -61,6 +61,15 @@ const Header = ({ currentDate, setCurrentDate }) => {
           <line x1="8" y1="2" x2="8" y2="6"></line>
           <line x1="3" y1="10" x2="21" y2="10"></line>
         </svg>
+      </button>
+
+      <button onClick={onDownloadCSV} style={{ position: 'absolute', right: '20px', padding: '6px 12px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '4px', backgroundColor: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: '8px', color: '#2e7d32', fontWeight: 'bold' }} title="CSV 파일로 다운로드">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        저장하기
       </button>
       
       <input 

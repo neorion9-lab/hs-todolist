@@ -159,9 +159,47 @@ function App() {
     closeModal()
   }
 
+  // CSV 다운로드 핸들러
+  const handleDownloadCSV = () => {
+    const headers = ['시간', '분류', '내용/제목'];
+    
+    const categoryMap = {
+      'school_main': '주요일정(학교)',
+      'school_gongmun': '처리업무(공문)',
+      'school_minwon': '처리업무(민원)',
+      'personal_main': '주요일정(개인)',
+      'personal_health_diet': '건강(식사)',
+      'personal_health_exercise': '건강(운동)',
+      'personal_gratitude': '감사일기'
+    };
+
+    const rows = planData.timeline.map(item => {
+      let content = item.content || '';
+      if (item.category === 'school_minwon' && item.minwon_detail) {
+        content = item.minwon_detail.title || '';
+      }
+      const escapedContent = `"${content.replace(/"/g, '""')}"`;
+      const catName = categoryMap[item.category] || item.category;
+      
+      return `${item.time},${catName},${escapedContent}`;
+    });
+
+    rows.sort();
+
+    const csvContent = "\uFEFF" + headers.join(',') + '\n' + rows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `planner_${dateString}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   return (
     <div className="container">
-      <Header currentDate={currentDate} setCurrentDate={setCurrentDate} />
+      <Header currentDate={currentDate} setCurrentDate={setCurrentDate} onDownloadCSV={handleDownloadCSV} />
       
       <SummaryGrid 
         summary={planData.summary} 
