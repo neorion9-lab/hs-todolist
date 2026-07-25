@@ -4,7 +4,8 @@ import SummaryGrid from './components/SummaryGrid'
 import Timeline from './components/Timeline'
 import MinwonModal from './components/MinwonModal'
 import ScheduleModal from './components/ScheduleModal'
-import { auth, googleProvider, signInWithPopup, signOut, onAuthStateChanged } from './firebase'
+import { auth, googleProvider, signInWithPopup, signOut, onAuthStateChanged, db } from './firebase'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
 
 // 기본 데이터 구조
 const defaultData = {
@@ -22,6 +23,7 @@ function App() {
   const [modalData, setModalData] = useState(null) // 선택된 타임라인이나 민원 데이터
   const [user, setUser] = useState(null)
   const [isAuthLoading, setIsAuthLoading] = useState(true)
+  const [isDataLoading, setIsDataLoading] = useState(false)
 
   const dateString = currentDate.toISOString().split('T')[0]
 
@@ -33,20 +35,40 @@ function App() {
     return () => unsubscribe()
   }, [])
 
-  // 날짜 변경 시 로컬 스토리지에서 데이터 로드
+  // 데이터베이스에서 데이터 로드 (user, dateString 변경 시)
   useEffect(() => {
-    const savedData = localStorage.getItem(`planner_${dateString}`)
-    if (savedData) {
-      setPlanData(JSON.parse(savedData))
-    } else {
-      setPlanData(defaultData)
-    }
-  }, [dateString])
+    const fetchData = async () => {
+      if (!user) return;
+      setIsDataLoading(true);
+      try {
+        const docRef = doc(db, "users", user.uid, "plans", dateString);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setPlanData(docSnap.data());
+        } else {
+          setPlanData(defaultData);
+        }
+      } catch (error) {
+        console.error("Error loading data: ", error);
+        setPlanData(defaultData);
+      } finally {
+        setIsDataLoading(false);
+      }
+    };
+    fetchData();
+  }, [dateString, user]);
 
-  // 데이터 변경 시 로컬 스토리지에 저장
-  const savePlanData = (newData) => {
-    setPlanData(newData)
-    localStorage.setItem(`planner_${dateString}`, JSON.stringify(newData))
+  // 데이터 변경 시 데이터베이스에 저장
+  const savePlanData = async (newData) => {
+    setPlanData(newData);
+    if (user) {
+      try {
+        const docRef = doc(db, "users", user.uid, "plans", dateString);
+        await setDoc(docRef, newData);
+      } catch (error) {
+        console.error("Error saving data: ", error);
+      }
+    }
   }
 
   // 상단 요약 업데이트 핸들러
@@ -255,7 +277,7 @@ function App() {
   if (!user) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f4f6f8' }}>
-        <h1 style={{ color: '#7cb342', marginBottom: '10px', fontSize: '2rem' }}>초초 플래너 (Chocho Planner)</h1>
+        <h1 style={{ color: '#7cb342', marginBottom: '10px', fontSize: '2rem' }}>쌤트리 (SSAM Tree)</h1>
         <p style={{ marginBottom: '30px', color: '#666' }}>나만의 학교 & 개인 일정 관리 마법사 ✨</p>
         <button 
           onClick={handleLogin}
@@ -275,6 +297,11 @@ function App() {
 
   return (
     <div className="container">
+      {isDataLoading && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(255,255,255,0.7)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ fontSize: '1.2rem', color: '#7cb342', fontWeight: 'bold' }}>데이터 불러오는 중...</div>
+        </div>
+      )}
       <Header currentDate={currentDate} setCurrentDate={setCurrentDate} onDownloadCSV={handleDownloadCSV} onLogout={handleLogout} user={user} />
       
       <SummaryGrid 
