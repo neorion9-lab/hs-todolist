@@ -2,6 +2,7 @@ import React from 'react'
 
 const Timeline = ({ timeline, updateTimeline, openModal, userSettings }) => {
   const hiddenCategories = userSettings?.hiddenCategories || []
+  const customLabels = userSettings?.customLabels || {}
 
   // 06:00 ~ 23:00 (18시간)
   const hours = Array.from({ length: 18 }, (_, i) => i + 6)
@@ -14,7 +15,10 @@ const Timeline = ({ timeline, updateTimeline, openModal, userSettings }) => {
     { id: 'personal_health_diet', label: '건강(식사)', zone: 'personal' },
     { id: 'personal_health_exercise', label: '건강(운동)', zone: 'personal' },
     { id: 'personal_gratitude', label: '감사일기', zone: 'personal' }
-  ]
+  ].map(col => ({
+    ...col,
+    label: customLabels[col.id] !== undefined ? customLabels[col.id] : col.label
+  }))
 
   const columns = allColumns.filter(col => !hiddenCategories.includes(col.id))
 

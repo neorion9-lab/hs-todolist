@@ -12,10 +12,16 @@ const ALL_CATEGORIES = [
 
 const SettingsModal = ({ onClose, onSave, initialSettings }) => {
   const [hiddenCategories, setHiddenCategories] = useState([])
+  const [customLabels, setCustomLabels] = useState({})
 
   useEffect(() => {
-    if (initialSettings && initialSettings.hiddenCategories) {
-      setHiddenCategories(initialSettings.hiddenCategories)
+    if (initialSettings) {
+      if (initialSettings.hiddenCategories) {
+        setHiddenCategories(initialSettings.hiddenCategories)
+      }
+      if (initialSettings.customLabels) {
+        setCustomLabels(initialSettings.customLabels)
+      }
     }
   }, [initialSettings])
 
@@ -29,9 +35,16 @@ const SettingsModal = ({ onClose, onSave, initialSettings }) => {
     })
   }
 
+  const handleLabelChange = (id, value) => {
+    setCustomLabels(prev => ({
+      ...prev,
+      [id]: value
+    }))
+  }
+
   const handleSubmit = (e) => {
     e.preventDefault()
-    onSave({ hiddenCategories })
+    onSave({ hiddenCategories, customLabels })
   }
 
   return (
@@ -43,35 +56,49 @@ const SettingsModal = ({ onClose, onSave, initialSettings }) => {
         </div>
         
         <form onSubmit={handleSubmit} style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
-          <p style={{fontSize: '0.9rem', color: '#666'}}>요약 화면에서 보고 싶은 일정을 선택해주세요. 체크를 해제하면 해당 항목이 숨겨집니다.</p>
+          <p style={{fontSize: '0.9rem', color: '#666'}}>요약 화면에서 보고 싶은 일정을 선택하고, 이름을 원하는 대로 수정해보세요.</p>
           
           <div style={{ marginBottom: '10px' }}>
             <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '5px', marginBottom: '10px', fontSize: '1.1rem', color: '#4CAF50' }}>학교 (School)</h3>
             {ALL_CATEGORIES.filter(c => c.zone === 'school').map(c => (
-              <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', cursor: 'pointer', fontSize: '1rem' }}>
+              <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: '1rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={!hiddenCategories.includes(c.id)} 
+                    onChange={() => handleToggle(c.id)}
+                    style={{ width: '18px', height: '18px' }}
+                  />
+                </label>
                 <input 
-                  type="checkbox" 
-                  checked={!hiddenCategories.includes(c.id)} 
-                  onChange={() => handleToggle(c.id)}
-                  style={{ width: '18px', height: '18px' }}
+                  type="text" 
+                  value={customLabels[c.id] !== undefined ? customLabels[c.id] : c.label} 
+                  onChange={(e) => handleLabelChange(c.id, e.target.value)}
+                  style={{ flex: 1, padding: '4px 8px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '0.95rem' }}
                 />
-                {c.label}
-              </label>
+              </div>
             ))}
           </div>
 
           <div>
             <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '5px', marginBottom: '10px', fontSize: '1.1rem', color: '#FFEB3B' }}>개인 (Personal)</h3>
             {ALL_CATEGORIES.filter(c => c.zone === 'personal').map(c => (
-              <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', cursor: 'pointer', fontSize: '1rem' }}>
+              <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: '1rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={!hiddenCategories.includes(c.id)} 
+                    onChange={() => handleToggle(c.id)}
+                    style={{ width: '18px', height: '18px' }}
+                  />
+                </label>
                 <input 
-                  type="checkbox" 
-                  checked={!hiddenCategories.includes(c.id)} 
-                  onChange={() => handleToggle(c.id)}
-                  style={{ width: '18px', height: '18px' }}
+                  type="text" 
+                  value={customLabels[c.id] !== undefined ? customLabels[c.id] : c.label} 
+                  onChange={(e) => handleLabelChange(c.id, e.target.value)}
+                  style={{ flex: 1, padding: '4px 8px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '0.95rem' }}
                 />
-                {c.label}
-              </label>
+              </div>
             ))}
           </div>
 

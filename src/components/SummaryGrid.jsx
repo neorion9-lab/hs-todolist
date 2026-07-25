@@ -2,7 +2,9 @@ import React, { useState } from 'react'
 
 const SummaryGrid = ({ summary, updateSummary, openMinwonModal, openScheduleModal, userSettings }) => {
   const hiddenCategories = userSettings?.hiddenCategories || []
+  const customLabels = userSettings?.customLabels || {}
   const isVisible = (id) => !hiddenCategories.includes(id)
+  const getLabel = (id, defaultLabel) => customLabels[id] !== undefined ? customLabels[id] : defaultLabel;
 
   const handleAdd = (zone, category) => {
     const currentList = summary[zone][category] || []
@@ -32,9 +34,9 @@ const SummaryGrid = ({ summary, updateSummary, openMinwonModal, openScheduleModa
       <div className="school-zone">
         <h2 className="section-title">학교 (School)</h2>
         <div className="grid-row">
-          {isVisible('school_main') && <Column zone="school" category="main" title="주요일정" summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} />}
-          {isVisible('school_gongmun') && <Column zone="school" category="gongmun" title="처리업무(공문)" summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} />}
-          {isVisible('school_minwon') && <Column zone="school" category="minwon" title="처리업무(민원)" summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} />}
+          {isVisible('school_main') && <Column zone="school" category="main" title={getLabel('school_main', '주요일정')} summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} />}
+          {isVisible('school_gongmun') && <Column zone="school" category="gongmun" title={getLabel('school_gongmun', '처리업무(공문)')} summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} />}
+          {isVisible('school_minwon') && <Column zone="school" category="minwon" title={getLabel('school_minwon', '처리업무(민원)')} summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} />}
         </div>
       </div>
 
@@ -42,10 +44,10 @@ const SummaryGrid = ({ summary, updateSummary, openMinwonModal, openScheduleModa
       <div className="personal-zone">
         <h2 className="section-title">개인 (Personal)</h2>
         <div className="grid-row">
-          {isVisible('personal_main') && <Column zone="personal" category="main" title="주요일정" summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} />}
-          {isVisible('personal_health_diet') && <Column zone="personal" category="health_diet" title="건강(식사)" summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} />}
-          {isVisible('personal_health_exercise') && <Column zone="personal" category="health_exercise" title="건강(운동)" summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} />}
-          {isVisible('personal_gratitude') && <Column zone="personal" category="gratitude" title="감사일기" summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} />}
+          {isVisible('personal_main') && <Column zone="personal" category="main" title={getLabel('personal_main', '주요일정')} summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} />}
+          {isVisible('personal_health_diet') && <Column zone="personal" category="health_diet" title={getLabel('personal_health_diet', '건강(식사)')} summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} />}
+          {isVisible('personal_health_exercise') && <Column zone="personal" category="health_exercise" title={getLabel('personal_health_exercise', '건강(운동)')} summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} />}
+          {isVisible('personal_gratitude') && <Column zone="personal" category="gratitude" title={getLabel('personal_gratitude', '감사일기')} summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} />}
         </div>
       </div>
     </div>
