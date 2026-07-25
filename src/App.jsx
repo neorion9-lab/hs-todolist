@@ -293,6 +293,9 @@ function App() {
           </svg>
           Google 계정으로 로그인
         </button>
+        <div style={{ position: 'absolute', bottom: '20px', color: '#999', fontSize: '0.8rem' }}>
+          저작권: &copy; 2026 Hyunsil_ORION. All rights reserved.
+        </div>
       </div>
     )
   }
