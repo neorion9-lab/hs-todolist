@@ -192,19 +192,33 @@ function App() {
   // 민원 저장 핸들러
   const handleMinwonSave = (minwonDetail) => {
     // 타임라인 업데이트 로직 (모달 데이터에 time, category가 있다고 가정)
-    if (modalData && modalData.time) {
+    const timeToSave = minwonDetail.time || (modalData && modalData.time);
+
+    if (modalData && timeToSave) {
       const existingTimeline = [...planData.timeline]
       let index = -1
+      
+      let zone = 'school';
+      let cat = 'minwon';
+      let timelineCategory = modalData.category;
+
+      if (modalData.zone) { // From SummaryGrid
+          zone = modalData.zone;
+          cat = modalData.category;
+          timelineCategory = `${zone}_${cat}`;
+      } else {
+          zone = modalData.category.startsWith('school') ? 'school' : 'personal';
+          cat = modalData.category.replace(`${zone}_`, '');
+      }
+
       if (modalData.id || modalData.minwon_detail) {
         index = existingTimeline.findIndex(t => 
           (modalData.id && t.id === modalData.id) || 
-          (!modalData.id && t.category === modalData.category && t.time === modalData.time && t.minwon_detail?.title === modalData.minwon_detail?.title)
+          (!modalData.id && t.category === timelineCategory && t.time === (modalData.time || timeToSave) && t.minwon_detail?.title === modalData.minwon_detail?.title)
         )
       }
       
       let removedContent = null;
-      const zone = modalData.category.startsWith('school') ? 'school' : 'personal';
-      const cat = modalData.category.replace(`${zone}_`, '');
 
       if (minwonDetail.delete) {
         if (index >= 0) {
@@ -219,8 +233,8 @@ function App() {
 
         const newEntry = {
           id: modalData.id || Date.now().toString() + Math.random().toString(36).substr(2, 9),
-          time: modalData.time,
-          category: modalData.category,
+          time: timeToSave,
+          category: timelineCategory,
           minwon_detail: minwonDetail
         }
 
@@ -231,6 +245,19 @@ function App() {
         }
         
         updateTimeline(existingTimeline, minwonDetail.title, zone, cat, removedContent)
+      }
+    } else if (modalData && modalData.zone) {
+      // Just update summary if no time is provided
+      let newSummary = JSON.parse(JSON.stringify(planData.summary))
+      const currentList = newSummary[modalData.zone][modalData.category] || []
+      const exists = currentList.some(item => (item.title || item) === minwonDetail.title)
+      if (!exists && currentList.length < 5) {
+        newSummary[modalData.zone][modalData.category] = [...currentList, minwonDetail.title]
+        const newData = {
+          ...planData,
+          summary: newSummary
+        }
+        savePlanData(newData)
       }
     }
     closeModal()
@@ -354,6 +381,7 @@ function App() {
         timeline={planData.timeline} 
         updateTimeline={updateTimeline}
         openModal={openModal}
+        userSettings={userSettings}
       />
 
       {modalType === 'minwon' && (

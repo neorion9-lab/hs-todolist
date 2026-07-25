@@ -1,10 +1,12 @@
 import React from 'react'
 
-const Timeline = ({ timeline, updateTimeline, openModal }) => {
+const Timeline = ({ timeline, updateTimeline, openModal, userSettings }) => {
+  const hiddenCategories = userSettings?.hiddenCategories || []
+
   // 06:00 ~ 23:00 (18시간)
   const hours = Array.from({ length: 18 }, (_, i) => i + 6)
 
-  const columns = [
+  const allColumns = [
     { id: 'school_main', label: '주요일정', zone: 'school' },
     { id: 'school_gongmun', label: '처리업무(공문)', zone: 'school' },
     { id: 'school_minwon', label: '처리업무(민원)', zone: 'school' },
@@ -13,6 +15,8 @@ const Timeline = ({ timeline, updateTimeline, openModal }) => {
     { id: 'personal_health_exercise', label: '건강(운동)', zone: 'personal' },
     { id: 'personal_gratitude', label: '감사일기', zone: 'personal' }
   ]
+
+  const columns = allColumns.filter(col => !hiddenCategories.includes(col.id))
 
   const handleCellClick = (timePrefix, hour, col, existingEntry = null) => {
     if (col.id === 'school_minwon') {

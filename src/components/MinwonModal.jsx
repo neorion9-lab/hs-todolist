@@ -9,12 +9,33 @@ const MinwonModal = ({ onClose, onSave, initialData }) => {
     status: '진행중',
     memo: ''
   })
+  
+  const isFromTimeline = !!(initialData?.time || initialData?.hour || initialData?.minwon_detail?.time);
+  const [useTime, setUseTime] = useState(false)
+  const [hour, setHour] = useState('09')
+  const [minute, setMinute] = useState('00')
 
   useEffect(() => {
     if (initialData?.minwon_detail) {
       setFormData(initialData.minwon_detail)
     } else if (initialData?.defaultTitle) {
       setFormData(prev => ({ ...prev, title: initialData.defaultTitle }))
+    }
+
+    if (initialData?.hour) {
+      setHour(initialData.hour)
+    } else if (initialData?.minwon_detail?.time) {
+      setHour(initialData.minwon_detail.time.split(':')[0])
+    }
+
+    if (initialData?.time) {
+      setMinute(initialData.time.split(':')[1] || '00')
+    } else if (initialData?.minwon_detail?.time) {
+      setMinute(initialData.minwon_detail.time.split(':')[1] || '00')
+    }
+    
+    if (isFromTimeline) {
+      setUseTime(true)
     }
   }, [initialData])
 
@@ -29,7 +50,13 @@ const MinwonModal = ({ onClose, onSave, initialData }) => {
       alert('민원/상담명을 입력해주세요.')
       return
     }
-    onSave(formData)
+    
+    const finalData = { ...formData }
+    if (useTime) {
+      finalData.time = `${hour}:${minute}`
+    }
+    
+    onSave(finalData)
   }
 
   return (
@@ -41,6 +68,40 @@ const MinwonModal = ({ onClose, onSave, initialData }) => {
         </div>
         
         <form onSubmit={handleSubmit} style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
+          <div className="modal-form-group">
+            <label>시간 (분 선택)</label>
+            <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+              <input type="checkbox" id="useTimeCheck" checked={useTime} onChange={e => setUseTime(e.target.checked)} style={{width: '16px', height: '16px'}} />
+              <label htmlFor="useTimeCheck" style={{fontWeight: 'normal', marginRight: '8px', cursor: 'pointer'}}>시간 지정</label>
+              
+              {useTime && (
+                <>
+                  {initialData?.hour ? (
+                    <span style={{fontSize: '1.2rem', fontWeight: 'bold'}}>{hour} : </span>
+                  ) : (
+                    <div style={{display: 'flex', alignItems: 'center', gap: '4px'}}>
+                      <select className="input-field" value={hour} onChange={e => setHour(e.target.value)} style={{width: '80px'}}>
+                        {Array.from({length: 16}, (_, i) => i + 7).map(h => {
+                          const hs = h.toString().padStart(2, '0');
+                          return <option key={hs} value={hs}>{hs}시</option>
+                        })}
+                      </select>
+                      <span style={{fontWeight: 'bold'}}>:</span>
+                    </div>
+                  )}
+                  <select className="input-field" value={minute} onChange={e => setMinute(e.target.value)} style={{width: '90px'}}>
+                    <option value="00">00분</option>
+                    <option value="10">10분</option>
+                    <option value="20">20분</option>
+                    <option value="30">30분</option>
+                    <option value="40">40분</option>
+                    <option value="50">50분</option>
+                  </select>
+                </>
+              )}
+            </div>
+          </div>
+
           <div className="modal-form-group">
             <label>민원/상담명</label>
             <input name="title" className="input-field" value={formData.title} onChange={handleChange} placeholder="예: 돌봄강사-초과근무" />
