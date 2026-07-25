@@ -1,6 +1,6 @@
 import React from 'react'
 
-const Header = ({ currentDate, setCurrentDate, onDownloadCSV }) => {
+const Header = ({ currentDate, setCurrentDate, onDownloadCSV, onLogout, user }) => {
   const handlePrevDay = () => {
     const prev = new Date(currentDate)
     prev.setDate(prev.getDate() - 1)
@@ -71,6 +71,13 @@ const Header = ({ currentDate, setCurrentDate, onDownloadCSV }) => {
         </svg>
         저장하기
       </button>
+
+      {user && (
+        <div style={{ position: 'absolute', right: '130px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '0.85rem', color: '#666' }}>{user.displayName || '사용자'}님</span>
+          <button onClick={onLogout} style={{ padding: '4px 8px', fontSize: '0.8rem', backgroundColor: '#f5f5f5', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer' }}>로그아웃</button>
+        </div>
+      )}
       
       <input 
         type="date"
