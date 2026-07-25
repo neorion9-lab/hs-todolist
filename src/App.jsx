@@ -144,47 +144,76 @@ function App() {
 
   // 일반 일정 저장 핸들러
   const handleScheduleSave = (data) => {
-    const existingTimeline = [...planData.timeline]
-    
-    let index = -1
-    if (modalData && (modalData.id || modalData.content)) {
-      index = existingTimeline.findIndex(t => 
-        (modalData.id && t.id === modalData.id) || 
-        (!modalData.id && t.category === modalData.category && t.time === modalData.time && t.content === modalData.content)
-      )
-    }
+    const timeToSave = data.time || (modalData && modalData.time);
 
-    if (data.delete) {
-      if (index >= 0) {
-        const deletedEntry = existingTimeline[index];
-        const zone = deletedEntry.category.startsWith('school') ? 'school' : 'personal';
-        const cat = deletedEntry.category.replace(`${zone}_`, '');
-
-        existingTimeline.splice(index, 1)
-        updateTimeline(existingTimeline, null, zone, cat, deletedEntry.content)
-      }
-    } else {
-      let removedContent = null;
-      const zone = data.category.startsWith('school') ? 'school' : 'personal';
-      const cat = data.category.replace(`${zone}_`, '');
-
-      if (index >= 0) {
-        removedContent = existingTimeline[index].content;
-      }
-
-      const newEntry = {
-        id: data.id || Date.now().toString() + Math.random().toString(36).substr(2, 9),
-        time: data.time,
-        category: data.category,
-        content: data.content
-      }
-      if (index >= 0) {
-        existingTimeline[index] = newEntry
-      } else {
-        existingTimeline.push(newEntry)
-      }
+    if (modalData && timeToSave) {
+      const existingTimeline = [...planData.timeline]
+      let index = -1
       
-      updateTimeline(existingTimeline, data.content, zone, cat, removedContent)
+      let zone = 'school';
+      let cat = 'main';
+      let timelineCategory = modalData.category;
+
+      if (modalData.zone) { // From SummaryGrid
+          zone = modalData.zone;
+          cat = modalData.category.replace(`${zone}_`, '');
+          timelineCategory = `${zone}_${cat}`;
+      } else {
+          zone = modalData.category.startsWith('school') ? 'school' : 'personal';
+          cat = modalData.category.replace(`${zone}_`, '');
+          timelineCategory = modalData.category;
+      }
+
+      if (modalData.id || modalData.content) {
+        index = existingTimeline.findIndex(t => 
+          (modalData.id && t.id === modalData.id) || 
+          (!modalData.id && t.category === timelineCategory && t.time === (modalData.time || timeToSave) && t.content === (modalData.content || data.content))
+        )
+      }
+
+      let removedContent = null;
+
+      if (data.delete) {
+        if (index >= 0) {
+          removedContent = existingTimeline[index].content;
+          existingTimeline.splice(index, 1);
+          updateTimeline(existingTimeline, null, zone, cat, removedContent);
+        }
+      } else {
+        if (index >= 0) {
+          removedContent = existingTimeline[index].content;
+        }
+
+        const newEntry = {
+          id: modalData.id || Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          time: timeToSave,
+          category: timelineCategory,
+          content: data.content,
+          status: data.status,
+          memo: data.memo
+        }
+
+        if (index >= 0) {
+          existingTimeline[index] = newEntry
+        } else {
+          existingTimeline.push(newEntry)
+        }
+        
+        updateTimeline(existingTimeline, data.content, zone, cat, removedContent)
+      }
+    } else if (modalData && modalData.zone) {
+      // Just update summary if no time is provided
+      let newSummary = JSON.parse(JSON.stringify(planData.summary))
+      const currentList = newSummary[modalData.zone][modalData.category] || []
+      const exists = currentList.some(item => (item.title || item.content || item) === data.content)
+      if (!exists && currentList.length < 5) {
+        newSummary[modalData.zone][modalData.category] = [...currentList, data.content]
+        const newData = {
+          ...planData,
+          summary: newSummary
+        }
+        savePlanData(newData)
+      }
     }
     closeModal()
   }
@@ -374,7 +403,8 @@ function App() {
       <SummaryGrid 
         summary={planData.summary} 
         updateSummary={updateSummary} 
-        openMinwonModal={(data) => openModal('minwon', data)}
+        openMinwonModal={(data) => openModal('minwon', data)} 
+        openScheduleModal={(data) => openModal('schedule', data)}
         userSettings={userSettings}
       />
       

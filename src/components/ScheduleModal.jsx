@@ -1,15 +1,26 @@
 import React, { useState, useEffect } from 'react'
 
 const ScheduleModal = ({ onClose, onSave, initialData }) => {
+  const [hour, setHour] = useState('09')
   const [minute, setMinute] = useState('00')
   const [content, setContent] = useState('')
+  const [status, setStatus] = useState('진행중')
+  const [memo, setMemo] = useState('')
 
   useEffect(() => {
     if (initialData) {
+      if (initialData.hour) {
+        setHour(initialData.hour)
+      } else if (initialData.time) {
+        setHour(initialData.time.split(':')[0])
+      }
+
       if (initialData.time) {
         setMinute(initialData.time.split(':')[1] || '00')
       }
       setContent(initialData.content || '')
+      setStatus(initialData.status || '진행중')
+      setMemo(initialData.memo || '')
     }
   }, [initialData])
 
@@ -17,8 +28,10 @@ const ScheduleModal = ({ onClose, onSave, initialData }) => {
     e.preventDefault()
     onSave({
       ...initialData,
-      time: `${initialData.hour}:${minute}`,
-      content
+      time: `${hour}:${minute}`,
+      content,
+      status,
+      memo
     })
   }
 
@@ -41,7 +54,7 @@ const ScheduleModal = ({ onClose, onSave, initialData }) => {
           <div className="modal-form-group">
             <label>시간 (분 선택)</label>
             <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-              <span style={{fontSize: '1.2rem', fontWeight: 'bold'}}>{initialData?.hour} : </span>
+              <span style={{fontSize: '1.2rem', fontWeight: 'bold'}}>{hour} : </span>
               <select 
                 className="input-field" 
                 value={minute} 
@@ -66,6 +79,25 @@ const ScheduleModal = ({ onClose, onSave, initialData }) => {
               onChange={e => setContent(e.target.value)} 
               placeholder="내용을 입력하세요" 
               autoFocus
+            />
+          </div>
+
+          <div className="modal-form-group">
+            <label>처리 결과</label>
+            <select className="input-field" value={status} onChange={e => setStatus(e.target.value)}>
+              <option>진행중</option>
+              <option>완료</option>
+              <option>후속조치 필요</option>
+            </select>
+          </div>
+
+          <div className="modal-form-group">
+            <label>조치 및 메모</label>
+            <textarea 
+              className="input-field" 
+              value={memo} 
+              onChange={e => setMemo(e.target.value)} 
+              placeholder="상담 내용 요약 및 메모" 
             />
           </div>
 
