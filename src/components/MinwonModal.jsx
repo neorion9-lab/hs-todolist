@@ -10,8 +10,6 @@ const MinwonModal = ({ onClose, onSave, initialData }) => {
     memo: ''
   })
   
-  const isFromTimeline = !!(initialData?.time || initialData?.hour || initialData?.minwon_detail?.time);
-  const [useTime, setUseTime] = useState(false)
   const [hour, setHour] = useState('09')
   const [minute, setMinute] = useState('00')
 
@@ -33,10 +31,6 @@ const MinwonModal = ({ onClose, onSave, initialData }) => {
     } else if (initialData?.minwon_detail?.time) {
       setMinute(initialData.minwon_detail.time.split(':')[1] || '00')
     }
-    
-    if (isFromTimeline) {
-      setUseTime(true)
-    }
   }, [initialData])
 
   const handleChange = (e) => {
@@ -51,12 +45,10 @@ const MinwonModal = ({ onClose, onSave, initialData }) => {
       return
     }
     
-    const finalData = { ...formData }
-    if (useTime) {
-      finalData.time = `${hour}:${minute}`
-    }
-    
-    onSave(finalData)
+    onSave({
+      ...formData,
+      time: `${hour}:${minute}`
+    })
   }
 
   return (
@@ -71,34 +63,20 @@ const MinwonModal = ({ onClose, onSave, initialData }) => {
           <div className="modal-form-group">
             <label>시간 (분 선택)</label>
             <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-              <input type="checkbox" id="useTimeCheck" checked={useTime} onChange={e => setUseTime(e.target.checked)} style={{width: '16px', height: '16px'}} />
-              <label htmlFor="useTimeCheck" style={{fontWeight: 'normal', marginRight: '8px', cursor: 'pointer'}}>시간 지정</label>
-              
-              {useTime && (
-                <>
-                  {initialData?.hour ? (
-                    <span style={{fontSize: '1.2rem', fontWeight: 'bold'}}>{hour} : </span>
-                  ) : (
-                    <div style={{display: 'flex', alignItems: 'center', gap: '4px'}}>
-                      <select className="input-field" value={hour} onChange={e => setHour(e.target.value)} style={{width: '80px'}}>
-                        {Array.from({length: 16}, (_, i) => i + 7).map(h => {
-                          const hs = h.toString().padStart(2, '0');
-                          return <option key={hs} value={hs}>{hs}시</option>
-                        })}
-                      </select>
-                      <span style={{fontWeight: 'bold'}}>:</span>
-                    </div>
-                  )}
-                  <select className="input-field" value={minute} onChange={e => setMinute(e.target.value)} style={{width: '90px'}}>
-                    <option value="00">00분</option>
-                    <option value="10">10분</option>
-                    <option value="20">20분</option>
-                    <option value="30">30분</option>
-                    <option value="40">40분</option>
-                    <option value="50">50분</option>
-                  </select>
-                </>
-              )}
+              <span style={{fontSize: '1.2rem', fontWeight: 'bold'}}>{hour} : </span>
+              <select 
+                className="input-field" 
+                value={minute} 
+                onChange={e => setMinute(e.target.value)}
+                style={{width: '100px'}}
+              >
+                <option value="00">00분</option>
+                <option value="10">10분</option>
+                <option value="20">20분</option>
+                <option value="30">30분</option>
+                <option value="40">40분</option>
+                <option value="50">50분</option>
+              </select>
             </div>
           </div>
 

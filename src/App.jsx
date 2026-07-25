@@ -202,13 +202,14 @@ function App() {
       let cat = 'minwon';
       let timelineCategory = modalData.category;
 
-      if (modalData.zone) { // From SummaryGrid
+      if (modalData.zone) { 
           zone = modalData.zone;
-          cat = modalData.category;
+          cat = modalData.category.replace(`${zone}_`, '');
           timelineCategory = `${zone}_${cat}`;
       } else {
           zone = modalData.category.startsWith('school') ? 'school' : 'personal';
           cat = modalData.category.replace(`${zone}_`, '');
+          timelineCategory = modalData.category;
       }
 
       if (modalData.id || modalData.minwon_detail) {
