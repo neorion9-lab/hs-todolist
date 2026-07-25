@@ -277,6 +277,7 @@ function App() {
   if (!user) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f4f6f8' }}>
+        <img src="/tree_logo.png" alt="SSAM Tree" style={{ width: '150px', height: '150px', marginBottom: '20px', borderRadius: '50%', objectFit: 'cover', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }} />
         <h1 style={{ color: '#7cb342', marginBottom: '10px', fontSize: '2rem' }}>쌤트리 (SSAM Tree)</h1>
         <p style={{ marginBottom: '10px', color: '#666' }}>나만의 학교 & 개인 일정 관리 마법사 ✨</p>
         <p style={{ marginBottom: '30px', color: '#888', fontSize: '0.95rem' }}>하루하루가 쌓여 열매를 맺는 공간 🌳</p>
