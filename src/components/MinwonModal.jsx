@@ -22,6 +22,8 @@ const MinwonModal = ({ onClose, onSave, initialData }) => {
 
     if (initialData?.hour) {
       setHour(initialData.hour)
+    } else if (initialData?.time) {
+      setHour(initialData.time.split(':')[0])
     } else if (initialData?.minwon_detail?.time) {
       setHour(initialData.minwon_detail.time.split(':')[0])
     }
