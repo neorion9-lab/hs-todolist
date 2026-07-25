@@ -4,6 +4,7 @@ import SummaryGrid from './components/SummaryGrid'
 import Timeline from './components/Timeline'
 import MinwonModal from './components/MinwonModal'
 import ScheduleModal from './components/ScheduleModal'
+import SettingsModal from './components/SettingsModal'
 import { auth, googleProvider, signInWithPopup, signOut, onAuthStateChanged, db } from './firebase'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 
@@ -19,8 +20,9 @@ const defaultData = {
 function App() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [planData, setPlanData] = useState(defaultData)
-  const [modalType, setModalType] = useState(null) // 'minwon' | 'schedule' | null
+  const [modalType, setModalType] = useState(null) // 'minwon' | 'schedule' | 'settings' | null
   const [modalData, setModalData] = useState(null) // 선택된 타임라인이나 민원 데이터
+  const [userSettings, setUserSettings] = useState({ hiddenCategories: [] })
   const [user, setUser] = useState(null)
   const [isAuthLoading, setIsAuthLoading] = useState(true)
   const [isDataLoading, setIsDataLoading] = useState(false)
@@ -57,6 +59,25 @@ function App() {
     };
     fetchData();
   }, [dateString, user]);
+
+  // 설정 데이터 로드
+  useEffect(() => {
+    const fetchSettings = async () => {
+      if (!user) return;
+      try {
+        const docRef = doc(db, "users", user.uid, "settings", "preferences");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setUserSettings(docSnap.data());
+        } else {
+          setUserSettings({ hiddenCategories: [] });
+        }
+      } catch (error) {
+        console.error("Error loading settings: ", error);
+      }
+    };
+    fetchSettings();
+  }, [user]);
 
   // 데이터 변경 시 데이터베이스에 저장
   const savePlanData = async (newData) => {
@@ -270,6 +291,19 @@ function App() {
     }
   }
 
+  const handleSettingsSave = async (newSettings) => {
+    setUserSettings(newSettings);
+    if (user) {
+      try {
+        const docRef = doc(db, "users", user.uid, "settings", "preferences");
+        await setDoc(docRef, newSettings, { merge: true });
+      } catch (error) {
+        console.error("Error saving settings: ", error);
+      }
+    }
+    closeModal();
+  }
+
   if (isAuthLoading) {
     return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontSize: '1.2rem', color: '#7cb342' }}>로딩중... (Loading)</div>
   }
@@ -307,12 +341,13 @@ function App() {
           <div style={{ fontSize: '1.2rem', color: '#7cb342', fontWeight: 'bold' }}>데이터 불러오는 중...</div>
         </div>
       )}
-      <Header currentDate={currentDate} setCurrentDate={setCurrentDate} onDownloadCSV={handleDownloadCSV} onLogout={handleLogout} user={user} />
+      <Header currentDate={currentDate} setCurrentDate={setCurrentDate} onDownloadCSV={handleDownloadCSV} onLogout={handleLogout} user={user} onOpenSettings={() => openModal('settings')} />
       
       <SummaryGrid 
         summary={planData.summary} 
         updateSummary={updateSummary} 
         openMinwonModal={(data) => openModal('minwon', data)}
+        userSettings={userSettings}
       />
       
       <Timeline 
@@ -334,6 +369,14 @@ function App() {
           onClose={closeModal} 
           onSave={handleScheduleSave}
           initialData={modalData}
+        />
+      )}
+
+      {modalType === 'settings' && (
+        <SettingsModal 
+          onClose={closeModal} 
+          onSave={handleSettingsSave}
+          initialSettings={userSettings}
         />
       )}
 

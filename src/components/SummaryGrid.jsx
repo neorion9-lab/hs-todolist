@@ -1,6 +1,9 @@
 import React, { useState } from 'react'
 
-const SummaryGrid = ({ summary, updateSummary, openMinwonModal }) => {
+const SummaryGrid = ({ summary, updateSummary, openMinwonModal, userSettings }) => {
+  const hiddenCategories = userSettings?.hiddenCategories || []
+  const isVisible = (id) => !hiddenCategories.includes(id)
+
   const [inputs, setInputs] = useState({
     school_main: '', school_gongmun: '', school_minwon: '',
     personal_main: '', personal_health_diet: '', personal_health_exercise: '', personal_gratitude: ''
@@ -49,9 +52,9 @@ const SummaryGrid = ({ summary, updateSummary, openMinwonModal }) => {
       <div className="school-zone">
         <h2 className="section-title">학교 (School)</h2>
         <div className="grid-row">
-          <Column zone="school" category="main" title="주요일정" inputName="school_main" summary={summary} inputs={inputs} handleInputChange={handleInputChange} handleKeyPress={handleKeyPress} handleAdd={handleAdd} handleDelete={handleDelete} />
-          <Column zone="school" category="gongmun" title="처리업무(공문)" inputName="school_gongmun" summary={summary} inputs={inputs} handleInputChange={handleInputChange} handleKeyPress={handleKeyPress} handleAdd={handleAdd} handleDelete={handleDelete} />
-          <Column zone="school" category="minwon" title="처리업무(민원)" inputName="school_minwon" summary={summary} inputs={inputs} handleInputChange={handleInputChange} handleKeyPress={handleKeyPress} handleAdd={handleAdd} handleDelete={handleDelete} />
+          {isVisible('school_main') && <Column zone="school" category="main" title="주요일정" inputName="school_main" summary={summary} inputs={inputs} handleInputChange={handleInputChange} handleKeyPress={handleKeyPress} handleAdd={handleAdd} handleDelete={handleDelete} />}
+          {isVisible('school_gongmun') && <Column zone="school" category="gongmun" title="처리업무(공문)" inputName="school_gongmun" summary={summary} inputs={inputs} handleInputChange={handleInputChange} handleKeyPress={handleKeyPress} handleAdd={handleAdd} handleDelete={handleDelete} />}
+          {isVisible('school_minwon') && <Column zone="school" category="minwon" title="처리업무(민원)" inputName="school_minwon" summary={summary} inputs={inputs} handleInputChange={handleInputChange} handleKeyPress={handleKeyPress} handleAdd={handleAdd} handleDelete={handleDelete} />}
         </div>
       </div>
 
@@ -59,10 +62,10 @@ const SummaryGrid = ({ summary, updateSummary, openMinwonModal }) => {
       <div className="personal-zone">
         <h2 className="section-title">개인 (Personal)</h2>
         <div className="grid-row">
-          <Column zone="personal" category="main" title="주요일정" inputName="personal_main" summary={summary} inputs={inputs} handleInputChange={handleInputChange} handleKeyPress={handleKeyPress} handleAdd={handleAdd} handleDelete={handleDelete} />
-          <Column zone="personal" category="health_diet" title="건강(식사)" inputName="personal_health_diet" summary={summary} inputs={inputs} handleInputChange={handleInputChange} handleKeyPress={handleKeyPress} handleAdd={handleAdd} handleDelete={handleDelete} />
-          <Column zone="personal" category="health_exercise" title="건강(운동)" inputName="personal_health_exercise" summary={summary} inputs={inputs} handleInputChange={handleInputChange} handleKeyPress={handleKeyPress} handleAdd={handleAdd} handleDelete={handleDelete} />
-          <Column zone="personal" category="gratitude" title="감사일기" inputName="personal_gratitude" summary={summary} inputs={inputs} handleInputChange={handleInputChange} handleKeyPress={handleKeyPress} handleAdd={handleAdd} handleDelete={handleDelete} />
+          {isVisible('personal_main') && <Column zone="personal" category="main" title="주요일정" inputName="personal_main" summary={summary} inputs={inputs} handleInputChange={handleInputChange} handleKeyPress={handleKeyPress} handleAdd={handleAdd} handleDelete={handleDelete} />}
+          {isVisible('personal_health_diet') && <Column zone="personal" category="health_diet" title="건강(식사)" inputName="personal_health_diet" summary={summary} inputs={inputs} handleInputChange={handleInputChange} handleKeyPress={handleKeyPress} handleAdd={handleAdd} handleDelete={handleDelete} />}
+          {isVisible('personal_health_exercise') && <Column zone="personal" category="health_exercise" title="건강(운동)" inputName="personal_health_exercise" summary={summary} inputs={inputs} handleInputChange={handleInputChange} handleKeyPress={handleKeyPress} handleAdd={handleAdd} handleDelete={handleDelete} />}
+          {isVisible('personal_gratitude') && <Column zone="personal" category="gratitude" title="감사일기" inputName="personal_gratitude" summary={summary} inputs={inputs} handleInputChange={handleInputChange} handleKeyPress={handleKeyPress} handleAdd={handleAdd} handleDelete={handleDelete} />}
         </div>
       </div>
     </div>
