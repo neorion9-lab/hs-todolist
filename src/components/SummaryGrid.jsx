@@ -23,9 +23,19 @@ const SummaryGrid = ({ summary, updateSummary, openMinwonModal, openScheduleModa
 
   const handleDelete = (zone, category, index) => {
     const currentList = summary[zone][category]
+    const itemToDelete = currentList[index]
+    
+    if (itemToDelete && itemToDelete.isRecurring) {
+      alert('반복 일정은 타임라인에서 수정/삭제해주세요.')
+      return
+    }
+
     const newList = [...currentList]
     newList.splice(index, 1)
-    updateSummary(zone, category, newList)
+    
+    // updateSummary에는 일반 일정(문자열 또는 일반 객체)만 전달되도록 필터링
+    const itemsToSave = newList.filter(i => !i.isRecurring).map(i => i.originalItem || i)
+    updateSummary(zone, category, itemsToSave)
   }
 
   return (
@@ -63,7 +73,10 @@ const Column = ({ zone, category, title, summary, handleAdd, handleDelete }) => 
         {items.map((item, idx) => (
           <div key={idx} className="item-row" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
             <span>{idx + 1}.</span>
-            <span style={{flex: 1}}>{item.title || item.content || item}</span>
+            <span style={{flex: 1}}>
+              {item.isRecurring && <span style={{fontSize: '0.8em', backgroundColor: '#e0f7fa', color: '#006064', padding: '2px 4px', borderRadius: '4px', marginRight: '4px'}}>반복</span>}
+              {item.title || item.content || item.originalItem || item}
+            </span>
             <button onClick={() => handleDelete(zone, category, idx)} style={{border: 'none', background: 'transparent', cursor: 'pointer', color: '#999'}}>X</button>
           </div>
         ))}

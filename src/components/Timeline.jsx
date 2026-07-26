@@ -82,6 +82,7 @@ const Timeline = ({ timeline, updateTimeline, openModal, userSettings }) => {
                             title="클릭하여 수정 또는 삭제"
                           >
                             <strong style={{color: '#4caf50', marginRight: '4px'}}>[{entry.time}]</strong> 
+                            {entry.recurringData && <span style={{fontSize: '0.8em', backgroundColor: '#e0f7fa', color: '#006064', padding: '1px 3px', borderRadius: '4px', marginRight: '4px'}}>반복</span>}
                             {displayContent}
                           </div>
                         )

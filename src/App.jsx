@@ -6,7 +6,7 @@ import MinwonModal from './components/MinwonModal'
 import ScheduleModal from './components/ScheduleModal'
 import SettingsModal from './components/SettingsModal'
 import { auth, googleProvider, signInWithPopup, signOut, onAuthStateChanged, db } from './firebase'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc, collection, getDocs, deleteDoc } from 'firebase/firestore'
 
 // 기본 데이터 구조
 const defaultData = {
@@ -26,6 +26,7 @@ function App() {
   const [user, setUser] = useState(null)
   const [isAuthLoading, setIsAuthLoading] = useState(true)
   const [isDataLoading, setIsDataLoading] = useState(false)
+  const [recurringTasks, setRecurringTasks] = useState([])
 
   const dateString = currentDate.toISOString().split('T')[0]
 
@@ -77,6 +78,24 @@ function App() {
       }
     };
     fetchSettings();
+  }, [user]);
+
+  // 반복 일정 로드
+  useEffect(() => {
+    const fetchRecurringTasks = async () => {
+      if (!user) return;
+      try {
+        const querySnapshot = await getDocs(collection(db, "users", user.uid, "recurring_tasks"));
+        const tasks = [];
+        querySnapshot.forEach((doc) => {
+          tasks.push({ id: doc.id, ...doc.data() });
+        });
+        setRecurringTasks(tasks);
+      } catch (error) {
+        console.error("Error loading recurring tasks: ", error);
+      }
+    };
+    fetchRecurringTasks();
   }, [user]);
 
   // 데이터 변경 시 데이터베이스에 저장
@@ -143,18 +162,15 @@ function App() {
   }
 
   // 일반 일정 저장 핸들러
-  const handleScheduleSave = (data) => {
+  const handleScheduleSave = async (data) => {
     const timeToSave = data.time || (modalData && modalData.time);
 
     if (modalData && timeToSave) {
-      const existingTimeline = [...planData.timeline]
-      let index = -1
-      
       let zone = 'school';
       let cat = 'main';
       let timelineCategory = modalData.category;
 
-      if (modalData.zone) { // From SummaryGrid
+      if (modalData.zone) { 
           zone = modalData.zone;
           cat = modalData.category.replace(`${zone}_`, '');
           timelineCategory = `${zone}_${cat}`;
@@ -164,48 +180,90 @@ function App() {
           timelineCategory = modalData.category;
       }
 
-      if (modalData.id || modalData.content) {
-        index = existingTimeline.findIndex(t => 
-          (modalData.id && t.id === modalData.id) || 
-          (!modalData.id && t.category === timelineCategory && t.time === (modalData.time || timeToSave) && t.content === (modalData.content || data.content))
-        )
-      }
+      if (data.recurringData) {
+        // --- 반복 일정 처리 ---
+        if (data.delete) {
+          if (modalData.id) {
+            await deleteDoc(doc(db, "users", user.uid, "recurring_tasks", modalData.id));
+            setRecurringTasks(prev => prev.filter(t => t.id !== modalData.id));
+          }
+        } else {
+          const taskId = modalData.id || Date.now().toString() + Math.random().toString(36).substr(2, 9);
+          const newTask = {
+            time: timeToSave,
+            category: timelineCategory,
+            content: data.content,
+            status: data.status,
+            memo: data.memo,
+            recurringData: data.recurringData
+          };
+          
+          await setDoc(doc(db, "users", user.uid, "recurring_tasks", taskId), newTask);
+          
+          setRecurringTasks(prev => {
+            const idx = prev.findIndex(t => t.id === taskId);
+            if (idx >= 0) {
+              const newArr = [...prev];
+              newArr[idx] = { id: taskId, ...newTask };
+              return newArr;
+            }
+            return [...prev, { id: taskId, ...newTask }];
+          });
 
-      let removedContent = null;
-
-      if (data.delete) {
-        if (index >= 0) {
-          removedContent = existingTimeline[index].content;
-          existingTimeline.splice(index, 1);
-          updateTimeline(existingTimeline, null, zone, cat, removedContent);
+          // 기존에 일반 일정이었다면 일반 일정에서 삭제
+          if (modalData.id) {
+            const existingTimeline = [...planData.timeline];
+            const dailyIndex = existingTimeline.findIndex(t => t.id === modalData.id);
+            if (dailyIndex >= 0) {
+              const removedContent = existingTimeline[dailyIndex].content;
+              existingTimeline.splice(dailyIndex, 1);
+              updateTimeline(existingTimeline, null, zone, cat, removedContent);
+            }
+          }
         }
       } else {
-        if (index >= 0) {
-          removedContent = existingTimeline[index].content;
+        // --- 일반 일정 처리 ---
+        // 기존에 반복 일정이었다면 삭제 (일반 일정으로 전환됨)
+        if (modalData.id && modalData.recurringData) {
+          await deleteDoc(doc(db, "users", user.uid, "recurring_tasks", modalData.id));
+          setRecurringTasks(prev => prev.filter(t => t.id !== modalData.id));
         }
 
-        const newEntry = {
-          id: modalData.id || Date.now().toString() + Math.random().toString(36).substr(2, 9),
-          time: timeToSave,
-          category: timelineCategory,
-          content: data.content,
-          status: data.status,
-          memo: data.memo
-        }
-
-        if (index >= 0) {
-          existingTimeline[index] = newEntry
-        } else {
-          existingTimeline.push(newEntry)
-        }
+        const existingTimeline = [...planData.timeline];
+        let index = existingTimeline.findIndex(t => t.id === modalData.id);
         
-        updateTimeline(existingTimeline, data.content, zone, cat, removedContent)
+        let removedContent = null;
+        if (data.delete) {
+          if (index >= 0) {
+            removedContent = existingTimeline[index].content;
+            existingTimeline.splice(index, 1);
+            updateTimeline(existingTimeline, null, zone, cat, removedContent);
+          }
+        } else {
+          if (index >= 0) {
+            removedContent = existingTimeline[index].content;
+          }
+          const newEntry = {
+            id: modalData.id || Date.now().toString() + Math.random().toString(36).substr(2, 9),
+            time: timeToSave,
+            category: timelineCategory,
+            content: data.content,
+            status: data.status,
+            memo: data.memo
+          };
+          if (index >= 0) {
+            existingTimeline[index] = newEntry;
+          } else {
+            existingTimeline.push(newEntry);
+          }
+          updateTimeline(existingTimeline, data.content, zone, cat, removedContent);
+        }
       }
     } else if (modalData && modalData.zone) {
       // Just update summary if no time is provided
       let newSummary = JSON.parse(JSON.stringify(planData.summary))
       const currentList = newSummary[modalData.zone][modalData.category] || []
-      const exists = currentList.some(item => (item.title || item.content || item) === data.content)
+      const exists = currentList.some(item => (item.title || item.content || item.originalItem || item) === data.content)
       if (!exists && currentList.length < 5) {
         newSummary[modalData.zone][modalData.category] = [...currentList, data.content]
         const newData = {
@@ -391,6 +449,51 @@ function App() {
     )
   }
 
+  // 현재 날짜에 해당하는 반복 일정을 합친 데이터를 계산
+  const getMergedPlanData = () => {
+    const mergedData = JSON.parse(JSON.stringify(planData));
+    
+    // JS Date에서 월요일은 1, 일요일은 0...
+    const currentDay = currentDate.getDay(); 
+    
+    const activeRecurring = recurringTasks.filter(task => {
+      if (!task.recurringData) return false;
+      const { startDate, endDate, repeatType, repeatDays } = task.recurringData;
+      if (dateString >= startDate && dateString <= endDate) {
+        if (repeatType === 'daily') return true;
+        if (repeatType === 'weekly' && repeatDays.includes(currentDay)) return true;
+      }
+      return false;
+    });
+
+    activeRecurring.forEach(task => {
+      // 타임라인 병합
+      mergedData.timeline.push(task);
+
+      // 요약 화면 병합
+      let zone = task.category.startsWith('school') ? 'school' : 'personal';
+      let cat = task.category.replace(`${zone}_`, '');
+      
+      if (!mergedData.summary[zone]) mergedData.summary[zone] = {};
+      if (!mergedData.summary[zone][cat]) mergedData.summary[zone][cat] = [];
+      
+      const currentList = mergedData.summary[zone][cat];
+      const exists = currentList.some(item => (item.title || item.content || item.originalItem || item) === task.content);
+      if (!exists && currentList.length < 5) {
+        // 객체 형태로 추가 (SummaryGrid에서 처리하도록)
+        currentList.push({
+          isRecurring: true,
+          originalItem: task.content,
+          ...task
+        });
+      }
+    });
+
+    return mergedData;
+  };
+
+  const mergedPlanData = getMergedPlanData();
+
   return (
     <div className="container">
       {isDataLoading && (
@@ -401,7 +504,7 @@ function App() {
       <Header currentDate={currentDate} setCurrentDate={setCurrentDate} onDownloadCSV={handleDownloadCSV} onLogout={handleLogout} user={user} onOpenSettings={() => openModal('settings')} />
       
       <SummaryGrid 
-        summary={planData.summary} 
+        summary={mergedPlanData.summary} 
         updateSummary={updateSummary} 
         openMinwonModal={(data) => openModal('minwon', data)} 
         openScheduleModal={(data) => openModal('schedule', data)}
@@ -409,7 +512,7 @@ function App() {
       />
       
       <Timeline 
-        timeline={planData.timeline} 
+        timeline={mergedPlanData.timeline} 
         updateTimeline={updateTimeline}
         openModal={openModal}
         userSettings={userSettings}
