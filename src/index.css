@@ -5,6 +5,8 @@
   --pastel-green: #E8F5E9;
   --soft-yellow: #FFF59D;
   --pastel-yellow: #FFFDE7;
+  --soft-pink: #F8BBD0;
+  --pastel-pink: #FCE4EC;
   --light-gray: #E0E0E0;
   --dark-gray: #333333;
   --white: #FFFFFF;
@@ -110,6 +112,13 @@ body {
   background-color: var(--pastel-yellow);
 }
 
+.grid-col.gratitude-col .col-header {
+  background-color: var(--soft-pink);
+}
+.grid-col.gratitude-col .col-content {
+  background-color: var(--pastel-pink);
+}
+
 .col-content {
   padding: 10px;
   flex: 1;
@@ -180,6 +189,9 @@ body {
 }
 .timeline-table th.personal-col {
   background-color: var(--soft-yellow);
+}
+.timeline-table th.gratitude-col {
+  background-color: var(--soft-pink);
 }
 .time-col {
   width: 80px;

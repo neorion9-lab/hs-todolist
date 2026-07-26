@@ -57,7 +57,7 @@ const SummaryGrid = ({ summary, updateSummary, openMinwonModal, openScheduleModa
 const Column = ({ zone, category, title, summary, handleAdd, handleDelete }) => {
   const items = summary[zone][category] || []
   return (
-    <div className="grid-col">
+    <div className={`grid-col ${category}-col`}>
       <div className="col-header">{title}</div>
       <div className="col-content">
         {items.map((item, idx) => (

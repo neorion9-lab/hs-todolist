@@ -38,11 +38,15 @@ const Timeline = ({ timeline, updateTimeline, openModal, userSettings }) => {
           <thead>
             <tr>
               <th className="time-col">시간</th>
-              {columns.map(col => (
-                <th key={col.id} className={col.zone === 'school' ? 'school-col' : 'personal-col'}>
-                  {col.label}
-                </th>
-              ))}
+              {columns.map(col => {
+                let thClass = col.zone === 'school' ? 'school-col' : 'personal-col';
+                if (col.id === 'personal_gratitude') thClass = 'gratitude-col';
+                return (
+                  <th key={col.id} className={thClass}>
+                    {col.label}
+                  </th>
+                )
+              })}
             </tr>
           </thead>
           <tbody>
