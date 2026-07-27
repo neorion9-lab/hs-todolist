@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-const SummaryGrid = ({ summary, updateSummary, openMinwonModal, openScheduleModal, userSettings }) => {
+const SummaryGrid = ({ summary, updateSummary, openMinwonModal, openScheduleModal, userSettings, timeline, toggleCompletion }) => {
   const hiddenCategories = userSettings?.hiddenCategories || []
   const customLabels = userSettings?.customLabels || {}
   const isVisible = (id) => !hiddenCategories.includes(id)
@@ -33,8 +33,7 @@ const SummaryGrid = ({ summary, updateSummary, openMinwonModal, openScheduleModa
     const newList = [...currentList]
     newList.splice(index, 1)
     
-    // updateSummary에는 일반 일정(문자열 또는 일반 객체)만 전달되도록 필터링
-    const itemsToSave = newList.filter(i => !i.isRecurring).map(i => i.originalItem || i)
+    const itemsToSave = newList.filter(i => !i.isRecurring)
     updateSummary(zone, category, itemsToSave)
   }
 
@@ -44,9 +43,9 @@ const SummaryGrid = ({ summary, updateSummary, openMinwonModal, openScheduleModa
       <div className="school-zone">
         <h2 className="section-title">학교 (School)</h2>
         <div className="grid-row">
-          {isVisible('school_main') && <Column zone="school" category="main" title={getLabel('school_main', '주요일정')} summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} />}
-          {isVisible('school_gongmun') && <Column zone="school" category="gongmun" title={getLabel('school_gongmun', '처리업무(공문)')} summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} />}
-          {isVisible('school_minwon') && <Column zone="school" category="minwon" title={getLabel('school_minwon', '처리업무(민원)')} summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} />}
+          {isVisible('school_main') && <Column zone="school" category="main" title={getLabel('school_main', '주요일정')} summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} timeline={timeline} toggleCompletion={toggleCompletion} />}
+          {isVisible('school_gongmun') && <Column zone="school" category="gongmun" title={getLabel('school_gongmun', '처리업무(공문)')} summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} timeline={timeline} toggleCompletion={toggleCompletion} />}
+          {isVisible('school_minwon') && <Column zone="school" category="minwon" title={getLabel('school_minwon', '처리업무(민원)')} summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} timeline={timeline} toggleCompletion={toggleCompletion} />}
         </div>
       </div>
 
@@ -54,26 +53,56 @@ const SummaryGrid = ({ summary, updateSummary, openMinwonModal, openScheduleModa
       <div className="personal-zone">
         <h2 className="section-title">개인 (Personal)</h2>
         <div className="grid-row">
-          {isVisible('personal_main') && <Column zone="personal" category="main" title={getLabel('personal_main', '주요일정')} summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} />}
-          {isVisible('personal_health_diet') && <Column zone="personal" category="health_diet" title={getLabel('personal_health_diet', '건강(식사)')} summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} />}
-          {isVisible('personal_health_exercise') && <Column zone="personal" category="health_exercise" title={getLabel('personal_health_exercise', '건강(운동)')} summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} />}
-          {isVisible('personal_gratitude') && <Column zone="personal" category="gratitude" title={getLabel('personal_gratitude', '감사일기')} summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} />}
+          {isVisible('personal_main') && <Column zone="personal" category="main" title={getLabel('personal_main', '주요일정')} summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} timeline={timeline} toggleCompletion={toggleCompletion} />}
+          {isVisible('personal_health_diet') && <Column zone="personal" category="health_diet" title={getLabel('personal_health_diet', '건강(식사)')} summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} timeline={timeline} toggleCompletion={toggleCompletion} />}
+          {isVisible('personal_health_exercise') && <Column zone="personal" category="health_exercise" title={getLabel('personal_health_exercise', '건강(운동)')} summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} timeline={timeline} toggleCompletion={toggleCompletion} />}
+          {isVisible('personal_gratitude') && <Column zone="personal" category="gratitude" title={getLabel('personal_gratitude', '감사일기')} summary={summary} handleAdd={handleAdd} handleDelete={handleDelete} timeline={timeline} toggleCompletion={toggleCompletion} />}
         </div>
       </div>
     </div>
   )
 }
 
-const Column = ({ zone, category, title, summary, handleAdd, handleDelete }) => {
+const Column = ({ zone, category, title, summary, handleAdd, handleDelete, timeline, toggleCompletion }) => {
   const items = summary[zone][category] || []
+  
+  const getIsCompleted = (item) => {
+    if (item && item.completed) return true;
+    const contentToMatch = item.title || item.content || item.originalItem || item;
+    
+    if (timeline) {
+      const tItem = timeline.find(t => {
+        let tContent = t.content;
+        if (t.category && t.category.includes('minwon') && t.minwon_detail) tContent = t.minwon_detail.title;
+        return tContent === contentToMatch;
+      });
+      if (tItem) {
+        const tStatus = tItem.category && tItem.category.includes('minwon') ? (tItem.minwon_detail?.status) : tItem.status;
+        if (tStatus === '완료') return true;
+      }
+    }
+    return false;
+  }
+
   return (
     <div className={`grid-col ${category}-col`}>
       <div className="col-header">{title}</div>
       <div className="col-content">
         {items.map((item, idx) => (
-          <div key={idx} className="item-row" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
-            <span>{idx + 1}.</span>
-            <span style={{flex: 1}}>
+          <div key={idx} className="item-row" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap', display: 'flex', alignItems: 'center' }}>
+            <input 
+              type="checkbox" 
+              checked={getIsCompleted(item)} 
+              onChange={() => {
+                if (item.isRecurring) {
+                  alert('반복 일정은 타임라인을 클릭해서 수정해주세요.');
+                  return;
+                }
+                toggleCompletion(zone, category, idx);
+              }} 
+              style={{marginRight: '8px', cursor: 'pointer', transform: 'scale(1.2)'}}
+            />
+            <span style={{flex: 1, textDecoration: getIsCompleted(item) ? 'line-through' : 'none', color: getIsCompleted(item) ? '#999' : 'inherit'}}>
               {item.isRecurring && <span style={{fontSize: '0.8em', backgroundColor: '#e0f7fa', color: '#006064', padding: '2px 4px', borderRadius: '4px', marginRight: '4px'}}>반복</span>}
               {item.title || item.content || item.originalItem || item}
             </span>

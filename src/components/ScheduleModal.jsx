@@ -8,8 +8,13 @@ const ScheduleModal = ({ onClose, onSave, initialData }) => {
   const [memo, setMemo] = useState('')
 
   const [isRecurring, setIsRecurring] = useState(false)
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
-  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0])
+  const getLocalDateString = () => {
+    const d = new Date();
+    return new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+  }
+
+  const [startDate, setStartDate] = useState(getLocalDateString())
+  const [endDate, setEndDate] = useState(getLocalDateString())
   const [repeatType, setRepeatType] = useState('daily') // 'daily', 'weekly'
   const [repeatDays, setRepeatDays] = useState([]) // 0=Sun, 1=Mon...
 
@@ -30,8 +35,8 @@ const ScheduleModal = ({ onClose, onSave, initialData }) => {
       
       if (initialData.recurringData) {
         setIsRecurring(true)
-        setStartDate(initialData.recurringData.startDate || new Date().toISOString().split('T')[0])
-        setEndDate(initialData.recurringData.endDate || new Date().toISOString().split('T')[0])
+        setStartDate(initialData.recurringData.startDate || getLocalDateString())
+        setEndDate(initialData.recurringData.endDate || getLocalDateString())
         setRepeatType(initialData.recurringData.repeatType || 'daily')
         setRepeatDays(initialData.recurringData.repeatDays || [])
       }

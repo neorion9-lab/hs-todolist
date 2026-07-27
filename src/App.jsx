@@ -28,7 +28,9 @@ function App() {
   const [isDataLoading, setIsDataLoading] = useState(false)
   const [recurringTasks, setRecurringTasks] = useState([])
 
-  const dateString = currentDate.toISOString().split('T')[0]
+  const tzOffset = currentDate.getTimezoneOffset() * 60000;
+  const localDate = new Date(currentDate.getTime() - tzOffset);
+  const dateString = localDate.toISOString().split('T')[0];
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -132,12 +134,12 @@ function App() {
 
     if (removedContent && zone && category) {
       const currentList = newSummary[zone][category] || []
-      newSummary[zone][category] = currentList.filter(item => (item.title || item) !== removedContent)
+      newSummary[zone][category] = currentList.filter(item => (item.title || item.content || item.originalItem || item) !== removedContent)
     }
 
     if (addedContent && zone && category) {
       const currentList = newSummary[zone][category] || []
-      const exists = currentList.some(item => (item.title || item) === addedContent)
+      const exists = currentList.some(item => (item.title || item.content || item.originalItem || item) === addedContent)
       if (!exists && currentList.length < 5) {
         newSummary[zone][category] = [...currentList, addedContent]
       }
@@ -150,6 +152,54 @@ function App() {
     }
     savePlanData(newData)
   }
+
+  // 체크박스 토글 핸들러
+  const toggleItemCompletion = (zone, category, index) => {
+    let newSummary = JSON.parse(JSON.stringify(planData.summary));
+    let item = newSummary[zone][category][index];
+    
+    if (typeof item === 'string') {
+      item = { originalItem: item, completed: false };
+    }
+    
+    const contentToMatch = item.title || item.content || item.originalItem || item;
+    
+    let isCurrentlyCompleted = item.completed;
+    
+    const timelineIndex = planData.timeline.findIndex(t => {
+      let tContent = t.content;
+      if (t.category && t.category.includes('minwon') && t.minwon_detail) tContent = t.minwon_detail.title;
+      return tContent === contentToMatch;
+    });
+
+    if (timelineIndex >= 0) {
+      const tItem = planData.timeline[timelineIndex];
+      const tStatus = tItem.category && tItem.category.includes('minwon') ? (tItem.minwon_detail?.status) : tItem.status;
+      if (tStatus === '완료') isCurrentlyCompleted = true;
+    }
+
+    const newCompleted = !isCurrentlyCompleted;
+    item.completed = newCompleted;
+    newSummary[zone][category][index] = item;
+
+    let newTimeline = [...planData.timeline];
+    if (timelineIndex >= 0) {
+      const tItem = { ...newTimeline[timelineIndex] };
+      if (tItem.category && tItem.category.includes('minwon') && tItem.minwon_detail) {
+        tItem.minwon_detail = { ...tItem.minwon_detail, status: newCompleted ? '완료' : '진행중' };
+      } else {
+        tItem.status = newCompleted ? '완료' : '진행중';
+      }
+      newTimeline[timelineIndex] = tItem;
+    }
+
+    const newData = {
+      ...planData,
+      summary: newSummary,
+      timeline: newTimeline
+    };
+    savePlanData(newData);
+  };
 
   // 모달 제어
   const openModal = (type, initialData = null) => {
@@ -505,10 +555,12 @@ function App() {
       
       <SummaryGrid 
         summary={mergedPlanData.summary} 
+        timeline={mergedPlanData.timeline}
         updateSummary={updateSummary} 
         openMinwonModal={(data) => openModal('minwon', data)} 
         openScheduleModal={(data) => openModal('schedule', data)}
         userSettings={userSettings}
+        toggleCompletion={toggleItemCompletion}
       />
       
       <Timeline 
