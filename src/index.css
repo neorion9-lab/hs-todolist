@@ -248,6 +248,12 @@ body {
   width: 80px;
   font-weight: 700;
   background-color: #f9f9f9;
+  position: sticky;
+  left: 0;
+  z-index: 5;
+}
+.timeline-table th.time-col {
+  z-index: 20;
 }
 .timeline-cell {
   height: 60px;
