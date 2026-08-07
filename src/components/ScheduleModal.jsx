@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react'
 const ScheduleModal = ({ onClose, onSave, initialData }) => {
   const [hour, setHour] = useState('09')
   const [minute, setMinute] = useState('00')
+  const [endHour, setEndHour] = useState('10')
+  const [endMinute, setEndMinute] = useState('00')
   const [content, setContent] = useState('')
   const [status, setStatus] = useState('진행중')
   const [memo, setMemo] = useState('')
@@ -28,6 +30,16 @@ const ScheduleModal = ({ onClose, onSave, initialData }) => {
 
       if (initialData.time) {
         setMinute(initialData.time.split(':')[1] || '00')
+      }
+      if (initialData.endTime) {
+        setEndHour(initialData.endTime.split(':')[0])
+        setEndMinute(initialData.endTime.split(':')[1] || '00')
+      } else {
+        // 기본값: 시작시간 + 1시간
+        let nextHour = parseInt(initialData.hour || (initialData.time ? initialData.time.split(':')[0] : '09')) + 1;
+        if (nextHour > 23) nextHour = 23;
+        setEndHour(nextHour.toString().padStart(2, '0'));
+        setEndMinute(initialData.time ? (initialData.time.split(':')[1] || '00') : '00');
       }
       setContent(initialData.content || '')
       setStatus(initialData.status || '진행중')
@@ -61,6 +73,7 @@ const ScheduleModal = ({ onClose, onSave, initialData }) => {
     const dataToSave = {
       ...initialData,
       time: `${hour}:${minute}`,
+      endTime: `${endHour}:${endMinute}`,
       content,
       status,
       memo
@@ -104,14 +117,42 @@ const ScheduleModal = ({ onClose, onSave, initialData }) => {
         
         <form onSubmit={handleSubmit} style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
           <div className="modal-form-group">
-            <label>시간 (분 선택)</label>
+            <label>시간 설정</label>
             <div style={{display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap'}}>
+              <span style={{fontWeight: 'bold', fontSize: '0.9rem'}}>시작: </span>
               <span style={{fontSize: '1.2rem', fontWeight: 'bold'}}>{hour} : </span>
               <select 
                 className="input-field" 
                 value={minute} 
                 onChange={e => setMinute(e.target.value)}
-                style={{width: '100px'}}
+                style={{width: '80px'}}
+              >
+                <option value="00">00분</option>
+                <option value="10">10분</option>
+                <option value="20">20분</option>
+                <option value="30">30분</option>
+                <option value="40">40분</option>
+                <option value="50">50분</option>
+              </select>
+
+              <span style={{fontWeight: 'bold', fontSize: '0.9rem', marginLeft: '10px'}}>종료: </span>
+              <select
+                className="input-field"
+                value={endHour}
+                onChange={e => setEndHour(e.target.value)}
+                style={{width: '70px', padding: '8px 4px'}}
+              >
+                {Array.from({ length: 18 }, (_, i) => i + 6).map(h => {
+                  const hStr = h.toString().padStart(2, '0');
+                  return <option key={hStr} value={hStr}>{hStr}시</option>
+                })}
+              </select>
+              <span style={{fontSize: '1.2rem', fontWeight: 'bold'}}> : </span>
+              <select 
+                className="input-field" 
+                value={endMinute} 
+                onChange={e => setEndMinute(e.target.value)}
+                style={{width: '80px'}}
               >
                 <option value="00">00분</option>
                 <option value="10">10분</option>
